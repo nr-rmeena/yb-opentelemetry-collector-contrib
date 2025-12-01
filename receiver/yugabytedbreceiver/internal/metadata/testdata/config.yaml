@@ -1,0 +1,17 @@
+default:
+all_set:
+  metrics:
+    yugabytedb.connection.count:
+      enabled: true
+    yugabytedb.pg_stat_activity.active_connections:
+      enabled: true
+    yugabytedb.pg_stat_activity.running_queries:
+      enabled: true
+none_set:
+  metrics:
+    yugabytedb.connection.count:
+      enabled: false
+    yugabytedb.pg_stat_activity.active_connections:
+      enabled: false
+    yugabytedb.pg_stat_activity.running_queries:
+      enabled: false

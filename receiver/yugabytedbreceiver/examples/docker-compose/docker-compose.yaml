@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  yugabytedb:
+    image: yugabytedb/yugabyte:latest
+    container_name: yugabytedb
+    environment:
+      YSQL_PASSWORD: yugabyte
+    ports:
+      - "5433:5433"
+      - "9000:9000"
+      - "9100:9100"
+      - "12000:12000"
+      - "13000:13000"
+      - "7000:7000"
+      - "7100:7100"
+    command: ["bin/yugabyted", "start", "--daemon=false"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "localhost", "-p", "5433", "-U", "yugabyte"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  otel-collector:
+    build:
+      context: ../../..
+      dockerfile: ./cmd/otelcontribcol/Dockerfile
+    container_name: otel-collector
+    environment:
+      NEW_RELIC_OTLP_ENDPOINT: "https://otlp.nr-data.net:4317"
+      NEW_RELIC_API_KEY: "<YOUR_NEW_RELIC_API_KEY>"
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+    depends_on:
+      yugabytedb:
+        condition: service_healthy
+    command: ["--config", "/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "55681:55681"
+
