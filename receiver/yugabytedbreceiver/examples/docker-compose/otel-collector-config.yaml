@@ -1,0 +1,32 @@
+receivers:
+  yugabytedb:
+    host: localhost
+    port: 5433
+    user: yugabyte
+    password: yugabyte
+    database: yugabyte
+
+exporters:
+  otlphttp/newrelic:
+    endpoint: "https://staging-otlp.nr-data.net"
+    headers:
+      api-key: "licence-key-goes-here"
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 200
+
+service:
+  pipelines:
+    metrics:
+      receivers: [yugabytedb]
+      exporters: [otlphttp/newrelic, debug]
+  telemetry:
+    metrics:
+      level: detailed

@@ -1,0 +1,19 @@
+package yugabytedbreceiver
+
+import (
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/receiver"
+)
+
+var (
+	typeStr = component.MustNewType("yugabytedb")
+)
+
+// NewFactory creates a new YugabyteDB receiver factory.
+func NewFactory() receiver.Factory {
+	return receiver.NewFactory(
+		typeStr,
+		createDefaultConfig,
+		receiver.WithMetrics(createMetricsReceiver, component.StabilityLevelAlpha),
+	)
+}
