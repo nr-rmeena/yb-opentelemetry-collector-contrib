@@ -11,7 +11,7 @@ services:
       - "9100:9100"
       - "12000:12000"
       - "13000:13000"
-      - "7000:7000"
+      - "7001:7000"
       - "7100:7100"
     command: ["bin/yugabyted", "start", "--daemon=false"]
     healthcheck:

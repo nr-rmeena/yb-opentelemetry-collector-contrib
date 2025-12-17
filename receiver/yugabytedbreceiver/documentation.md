@@ -12,6 +12,20 @@ metrics:
     enabled: false
 ```
 
+### yugabytedb.active_users.count
+
+The number of unique active users connected to YugabyteDB with active client backend connections.
+
+| Unit | Metric Type | Value Type | Stability |
+| ---- | ----------- | ---------- | --------- |
+| {users} | Gauge | Int | Alpha |
+
+#### Attributes
+
+| Name | Description | Values | Requirement Level |
+| ---- | ----------- | ------ | -------- |
+| connection.user | The database user associated with the connection | Any Str | Recommended |
+
 ### yugabytedb.connection.count
 
 The number of database connections by state and user.

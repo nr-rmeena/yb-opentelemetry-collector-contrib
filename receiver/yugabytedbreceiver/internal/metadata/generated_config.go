@@ -27,6 +27,7 @@ func (ms *MetricConfig) Unmarshal(parser *confmap.Conf) error {
 
 // MetricsConfig provides config for yugabytedb metrics.
 type MetricsConfig struct {
+	YugabytedbActiveUsersCount                MetricConfig `mapstructure:"yugabytedb.active_users.count"`
 	YugabytedbConnectionCount                 MetricConfig `mapstructure:"yugabytedb.connection.count"`
 	YugabytedbPgStatActivityActiveConnections MetricConfig `mapstructure:"yugabytedb.pg_stat_activity.active_connections"`
 	YugabytedbPgStatActivityRunningQueries    MetricConfig `mapstructure:"yugabytedb.pg_stat_activity.running_queries"`
@@ -34,6 +35,9 @@ type MetricsConfig struct {
 
 func DefaultMetricsConfig() MetricsConfig {
 	return MetricsConfig{
+		YugabytedbActiveUsersCount: MetricConfig{
+			Enabled: true,
+		},
 		YugabytedbConnectionCount: MetricConfig{
 			Enabled: true,
 		},
