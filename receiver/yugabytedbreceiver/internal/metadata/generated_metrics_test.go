@@ -61,6 +61,10 @@ func TestMetricsBuilder(t *testing.T) {
 
 			defaultMetricsCount++
 			allMetricsCount++
+			mb.RecordYugabytedbActiveUsersCountDataPoint(ts, 1, "connection.user-val")
+
+			defaultMetricsCount++
+			allMetricsCount++
 			mb.RecordYugabytedbConnectionCountDataPoint(ts, 1, "connection.state-val", "connection.user-val")
 
 			defaultMetricsCount++
@@ -93,6 +97,21 @@ func TestMetricsBuilder(t *testing.T) {
 			validatedMetrics := make(map[string]bool)
 			for i := 0; i < ms.Len(); i++ {
 				switch ms.At(i).Name() {
+				case "yugabytedb.active_users.count":
+					assert.False(t, validatedMetrics["yugabytedb.active_users.count"], "Found a duplicate in the metrics slice: yugabytedb.active_users.count")
+					validatedMetrics["yugabytedb.active_users.count"] = true
+					assert.Equal(t, pmetric.MetricTypeGauge, ms.At(i).Type())
+					assert.Equal(t, 1, ms.At(i).Gauge().DataPoints().Len())
+					assert.Equal(t, "The number of unique active users connected to YugabyteDB with active client backend connections.", ms.At(i).Description())
+					assert.Equal(t, "{users}", ms.At(i).Unit())
+					dp := ms.At(i).Gauge().DataPoints().At(0)
+					assert.Equal(t, start, dp.StartTimestamp())
+					assert.Equal(t, ts, dp.Timestamp())
+					assert.Equal(t, pmetric.NumberDataPointValueTypeInt, dp.ValueType())
+					assert.Equal(t, int64(1), dp.IntValue())
+					attrVal, ok := dp.Attributes().Get("connection.user")
+					assert.True(t, ok)
+					assert.Equal(t, "connection.user-val", attrVal.Str())
 				case "yugabytedb.connection.count":
 					assert.False(t, validatedMetrics["yugabytedb.connection.count"], "Found a duplicate in the metrics slice: yugabytedb.connection.count")
 					validatedMetrics["yugabytedb.connection.count"] = true

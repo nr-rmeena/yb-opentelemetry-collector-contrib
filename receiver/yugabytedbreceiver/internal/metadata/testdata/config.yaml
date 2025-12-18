@@ -1,6 +1,8 @@
 default:
 all_set:
   metrics:
+    yugabytedb.active_users.count:
+      enabled: true
     yugabytedb.connection.count:
       enabled: true
     yugabytedb.pg_stat_activity.active_connections:
@@ -9,6 +11,8 @@ all_set:
       enabled: true
 none_set:
   metrics:
+    yugabytedb.active_users.count:
+      enabled: false
     yugabytedb.connection.count:
       enabled: false
     yugabytedb.pg_stat_activity.active_connections:

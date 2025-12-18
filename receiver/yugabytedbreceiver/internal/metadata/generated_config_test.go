@@ -27,6 +27,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "all_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					YugabytedbActiveUsersCount:                MetricConfig{Enabled: true},
 					YugabytedbConnectionCount:                 MetricConfig{Enabled: true},
 					YugabytedbPgStatActivityActiveConnections: MetricConfig{Enabled: true},
 					YugabytedbPgStatActivityRunningQueries:    MetricConfig{Enabled: true},
@@ -37,6 +38,7 @@ func TestMetricsBuilderConfig(t *testing.T) {
 			name: "none_set",
 			want: MetricsBuilderConfig{
 				Metrics: MetricsConfig{
+					YugabytedbActiveUsersCount:                MetricConfig{Enabled: false},
 					YugabytedbConnectionCount:                 MetricConfig{Enabled: false},
 					YugabytedbPgStatActivityActiveConnections: MetricConfig{Enabled: false},
 					YugabytedbPgStatActivityRunningQueries:    MetricConfig{Enabled: false},

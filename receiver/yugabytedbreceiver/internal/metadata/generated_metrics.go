@@ -12,6 +12,9 @@ import (
 )
 
 var MetricsInfo = metricsInfo{
+	YugabytedbActiveUsersCount: metricInfo{
+		Name: "yugabytedb.active_users.count",
+	},
 	YugabytedbConnectionCount: metricInfo{
 		Name: "yugabytedb.connection.count",
 	},
@@ -24,6 +27,7 @@ var MetricsInfo = metricsInfo{
 }
 
 type metricsInfo struct {
+	YugabytedbActiveUsersCount                metricInfo
 	YugabytedbConnectionCount                 metricInfo
 	YugabytedbPgStatActivityActiveConnections metricInfo
 	YugabytedbPgStatActivityRunningQueries    metricInfo
@@ -31,6 +35,57 @@ type metricsInfo struct {
 
 type metricInfo struct {
 	Name string
+}
+
+type metricYugabytedbActiveUsersCount struct {
+	data     pmetric.Metric // data buffer for generated metric.
+	config   MetricConfig   // metric config provided by user.
+	capacity int            // max observed number of data points added to the metric.
+}
+
+// init fills yugabytedb.active_users.count metric with initial data.
+func (m *metricYugabytedbActiveUsersCount) init() {
+	m.data.SetName("yugabytedb.active_users.count")
+	m.data.SetDescription("The number of unique active users connected to YugabyteDB with active client backend connections.")
+	m.data.SetUnit("{users}")
+	m.data.SetEmptyGauge()
+	m.data.Gauge().DataPoints().EnsureCapacity(m.capacity)
+}
+
+func (m *metricYugabytedbActiveUsersCount) recordDataPoint(start pcommon.Timestamp, ts pcommon.Timestamp, val int64, connectionUserAttributeValue string) {
+	if !m.config.Enabled {
+		return
+	}
+	dp := m.data.Gauge().DataPoints().AppendEmpty()
+	dp.SetStartTimestamp(start)
+	dp.SetTimestamp(ts)
+	dp.SetIntValue(val)
+	dp.Attributes().PutStr("connection.user", connectionUserAttributeValue)
+}
+
+// updateCapacity saves max length of data point slices that will be used for the slice capacity.
+func (m *metricYugabytedbActiveUsersCount) updateCapacity() {
+	if m.data.Gauge().DataPoints().Len() > m.capacity {
+		m.capacity = m.data.Gauge().DataPoints().Len()
+	}
+}
+
+// emit appends recorded metric data to a metrics slice and prepares it for recording another set of data points.
+func (m *metricYugabytedbActiveUsersCount) emit(metrics pmetric.MetricSlice) {
+	if m.config.Enabled && m.data.Gauge().DataPoints().Len() > 0 {
+		m.updateCapacity()
+		m.data.MoveTo(metrics.AppendEmpty())
+		m.init()
+	}
+}
+
+func newMetricYugabytedbActiveUsersCount(cfg MetricConfig) metricYugabytedbActiveUsersCount {
+	m := metricYugabytedbActiveUsersCount{config: cfg}
+	if cfg.Enabled {
+		m.data = pmetric.NewMetric()
+		m.init()
+	}
+	return m
 }
 
 type metricYugabytedbConnectionCount struct {
@@ -191,6 +246,7 @@ type MetricsBuilder struct {
 	metricsCapacity                                 int                  // maximum observed number of metrics per resource.
 	metricsBuffer                                   pmetric.Metrics      // accumulates metrics data before emitting.
 	buildInfo                                       component.BuildInfo  // contains version information.
+	metricYugabytedbActiveUsersCount                metricYugabytedbActiveUsersCount
 	metricYugabytedbConnectionCount                 metricYugabytedbConnectionCount
 	metricYugabytedbPgStatActivityActiveConnections metricYugabytedbPgStatActivityActiveConnections
 	metricYugabytedbPgStatActivityRunningQueries    metricYugabytedbPgStatActivityRunningQueries
@@ -215,11 +271,12 @@ func WithStartTime(startTime pcommon.Timestamp) MetricBuilderOption {
 }
 func NewMetricsBuilder(mbc MetricsBuilderConfig, settings receiver.Settings, options ...MetricBuilderOption) *MetricsBuilder {
 	mb := &MetricsBuilder{
-		config:                          mbc,
-		startTime:                       pcommon.NewTimestampFromTime(time.Now()),
-		metricsBuffer:                   pmetric.NewMetrics(),
-		buildInfo:                       settings.BuildInfo,
-		metricYugabytedbConnectionCount: newMetricYugabytedbConnectionCount(mbc.Metrics.YugabytedbConnectionCount),
+		config:                           mbc,
+		startTime:                        pcommon.NewTimestampFromTime(time.Now()),
+		metricsBuffer:                    pmetric.NewMetrics(),
+		buildInfo:                        settings.BuildInfo,
+		metricYugabytedbActiveUsersCount: newMetricYugabytedbActiveUsersCount(mbc.Metrics.YugabytedbActiveUsersCount),
+		metricYugabytedbConnectionCount:  newMetricYugabytedbConnectionCount(mbc.Metrics.YugabytedbConnectionCount),
 		metricYugabytedbPgStatActivityActiveConnections: newMetricYugabytedbPgStatActivityActiveConnections(mbc.Metrics.YugabytedbPgStatActivityActiveConnections),
 		metricYugabytedbPgStatActivityRunningQueries:    newMetricYugabytedbPgStatActivityRunningQueries(mbc.Metrics.YugabytedbPgStatActivityRunningQueries),
 	}
@@ -287,6 +344,7 @@ func (mb *MetricsBuilder) EmitForResource(options ...ResourceMetricsOption) {
 	ils.Scope().SetName(ScopeName)
 	ils.Scope().SetVersion(mb.buildInfo.Version)
 	ils.Metrics().EnsureCapacity(mb.metricsCapacity)
+	mb.metricYugabytedbActiveUsersCount.emit(ils.Metrics())
 	mb.metricYugabytedbConnectionCount.emit(ils.Metrics())
 	mb.metricYugabytedbPgStatActivityActiveConnections.emit(ils.Metrics())
 	mb.metricYugabytedbPgStatActivityRunningQueries.emit(ils.Metrics())
@@ -309,6 +367,11 @@ func (mb *MetricsBuilder) Emit(options ...ResourceMetricsOption) pmetric.Metrics
 	metrics := mb.metricsBuffer
 	mb.metricsBuffer = pmetric.NewMetrics()
 	return metrics
+}
+
+// RecordYugabytedbActiveUsersCountDataPoint adds a data point to yugabytedb.active_users.count metric.
+func (mb *MetricsBuilder) RecordYugabytedbActiveUsersCountDataPoint(ts pcommon.Timestamp, val int64, connectionUserAttributeValue string) {
+	mb.metricYugabytedbActiveUsersCount.recordDataPoint(mb.startTime, ts, val, connectionUserAttributeValue)
 }
 
 // RecordYugabytedbConnectionCountDataPoint adds a data point to yugabytedb.connection.count metric.

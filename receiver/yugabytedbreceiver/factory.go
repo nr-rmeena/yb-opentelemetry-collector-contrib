@@ -5,9 +5,7 @@ import (
 	"go.opentelemetry.io/collector/receiver"
 )
 
-var (
-	typeStr = component.MustNewType("yugabytedb")
-)
+var typeStr = component.MustNewType("yugabytedb")
 
 // NewFactory creates a new YugabyteDB receiver factory.
 func NewFactory() receiver.Factory {

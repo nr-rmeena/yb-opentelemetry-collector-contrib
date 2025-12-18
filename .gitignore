@@ -47,3 +47,7 @@ internal/tools/testresults/*
 go.work*
 
 /result
+
+CLAUDE.md
+/receiver/yugabytedbreceiver/JIRA_TASK_CHECKLIST.md
+

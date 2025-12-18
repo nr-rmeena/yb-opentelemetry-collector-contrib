@@ -8,8 +8,6 @@ status:
   codeowners:
     active: [rmeena]
 
-resource_attributes:
-
 attributes:
   connection.state:
     description: The state of the database connection (active, idle, idle_in_transaction, waiting)
@@ -19,6 +17,15 @@ attributes:
     type: string
 
 metrics:
+  yugabytedb.active_users.count:
+    enabled: true
+    description: The number of unique active users connected to YugabyteDB with active client backend connections.
+    unit: "{users}"
+    gauge:
+      value_type: int
+    attributes: [connection.user]
+    stability:
+      level: alpha
   yugabytedb.connection.count:
     enabled: true
     description: The number of database connections by state and user.
